@@ -16,9 +16,7 @@ interface RedSocial {
   url: string;
 }
 
-// Aquí empieza el componente
 export default function FormularioEgresado() {
-  // Todo tu código y hooks aquí
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -109,89 +107,109 @@ export default function FormularioEgresado() {
     setSubmitLoading(false);
   };
 
-  if (loading) return <p className="text-center mt-10">Cargando datos...</p>;
+  if (loading) return <p className="text-center mt-10 text-gray-600">Cargando datos...</p>;
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-center text-blue-800 mb-6">
-        {id ? "Editar Egresado" : "Registrar Egresado"}
-      </h1>
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-6">
+      <section className="bg-white max-w-3xl w-full rounded-2xl shadow-lg p-8 sm:p-12">
+        <h1 className="text-4xl font-extrabold text-blue-900 text-center mb-10 tracking-wide">
+          {id ? "Editar Egresado" : "Registrar Egresado"}
+        </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow">
-        <input
-          type="text"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          placeholder="Nombre"
-          className="w-full border p-2 rounded"
-          required
-          disabled={submitLoading}
-        />
-        <input
-          type="text"
-          value={puesto}
-          onChange={(e) => setPuesto(e.target.value)}
-          placeholder="Puesto"
-          className="w-full border p-2 rounded"
-          required
-          disabled={submitLoading}
-        />
-        <textarea
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          placeholder="Descripción"
-          className="w-full border p-2 rounded"
-          disabled={submitLoading}
-        />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <input
+            type="text"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            placeholder="Nombre"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-lg placeholder-gray-400
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            required
+            disabled={submitLoading}
+          />
+          <input
+            type="text"
+            value={puesto}
+            onChange={(e) => setPuesto(e.target.value)}
+            placeholder="Puesto"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-lg placeholder-gray-400
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            required
+            disabled={submitLoading}
+          />
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Descripción"
+            rows={4}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-lg placeholder-gray-400 resize-none
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            disabled={submitLoading}
+          />
 
-        <h2 className="font-semibold mt-4">Redes Sociales</h2>
-        {redesSociales.map((red, index) => (
-          <div key={index} className="flex gap-2 mb-2">
-            <input
-              type="text"
-              value={red.nombre}
-              onChange={(e) => actualizarRedSocial(index, "nombre", e.target.value)}
-              placeholder="Nombre"
-              className="w-1/3 border p-2 rounded"
-              disabled={submitLoading}
-            />
-            <input
-              type="url"
-              value={red.url}
-              onChange={(e) => actualizarRedSocial(index, "url", e.target.value)}
-              placeholder="URL"
-              className="w-2/3 border p-2 rounded"
-              disabled={submitLoading}
-            />
-            <button
-              type="button"
-              onClick={() => eliminarRedSocial(index)}
-              className="text-red-600 hover:underline"
-              disabled={submitLoading}
-            >
-              Quitar
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={agregarRedSocial}
-          className="text-blue-600 hover:underline"
-          disabled={submitLoading}
-        >
-          + Agregar otra red social
-        </button>
+          <h2 className="text-xl font-semibold text-blue-700 mt-8 mb-4">Redes Sociales</h2>
 
-        <button
-          type="submit"
-          className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          disabled={submitLoading}
-        >
-          {submitLoading ? (id ? "Actualizando..." : "Registrando...") : id ? "Actualizar" : "Registrar"}
-        </button>
-      </form>
+          {redesSociales.map((red, index) => (
+            <div key={index} className="flex gap-3 items-center mb-3">
+              <input
+                type="text"
+                value={red.nombre}
+                onChange={(e) => actualizarRedSocial(index, "nombre", e.target.value)}
+                placeholder="Nombre (ej. LinkedIn)"
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={submitLoading}
+              />
+              <input
+                type="url"
+                value={red.url}
+                onChange={(e) => actualizarRedSocial(index, "url", e.target.value)}
+                placeholder="URL (https://...)"
+                className="flex-2 border border-gray-300 rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={submitLoading}
+              />
+              <button
+                type="button"
+                onClick={() => eliminarRedSocial(index)}
+                className="text-red-600 hover:text-red-800 font-semibold transition"
+                disabled={submitLoading}
+                aria-label={`Quitar red social ${red.nombre || index + 1}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
 
-      {mensaje && <p className="text-center mt-4 text-green-600">{mensaje}</p>}
+          <button
+            type="button"
+            onClick={agregarRedSocial}
+            className="inline-block text-blue-600 font-semibold hover:text-blue-800 transition focus:outline-none"
+            disabled={submitLoading}
+          >
+            + Agregar otra red social
+          </button>
+
+          <button
+            type="submit"
+            className="mt-8 w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700
+            focus:outline-none focus:ring-4 focus:ring-blue-300 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={submitLoading}
+          >
+            {submitLoading ? (id ? "Actualizando..." : "Registrando...") : id ? "Actualizar" : "Registrar"}
+          </button>
+        </form>
+
+        {mensaje && (
+          <p
+            className={`mt-6 text-center font-medium ${
+              mensaje.includes("error") ? "text-red-600" : "text-green-600"
+            }`}
+          >
+            {mensaje}
+          </p>
+        )}
+      </section>
     </main>
   );
 }
