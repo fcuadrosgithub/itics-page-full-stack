@@ -3,15 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaLink } from "react-icons/fa";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
 
 interface RedSocial {
-  id: number;
   nombre: string;
   url: string;
 }
 
 interface Egresado {
-  id: number;
+  id: string;
   nombre: string;
   puesto: string;
   descripcion: string;
@@ -22,94 +23,124 @@ export default function ListaEgresados() {
   const router = useRouter();
   const [egresados, setEgresados] = useState<Egresado[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   useEffect(() => {
-    const almacenados = JSON.parse(localStorage.getItem("egresados") || "[]");
-    setEgresados(almacenados);
+    const cargarEgresados = async () => {
+      setLoading(true);
+      try {
+        const snapshot = await getDocs(collection(db, "egresados"));
+        const lista: Egresado[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Egresado[];
+        setEgresados(lista);
+      } catch (error) {
+        console.error("Error cargando egresados:", error);
+      }
+      setLoading(false);
+    };
+
+    cargarEgresados();
   }, []);
 
-  const eliminarEgresado = (id: number) => {
+  const eliminarEgresado = async (id: string) => {
     if (confirm("¿Seguro que deseas eliminar este egresado?")) {
-      const filtrados = egresados.filter((e) => e.id !== id);
-      localStorage.setItem("egresados", JSON.stringify(filtrados));
-      setEgresados(filtrados);
+      setEliminandoId(id);
+      try {
+        await deleteDoc(doc(db, "egresados", id));
+        setEgresados((prev) => prev.filter((e) => e.id !== id));
+      } catch (error) {
+        console.error("Error eliminando:", error);
+      }
+      setEliminandoId(null);
     }
   };
 
-  const editarEgresado = (id: number) => {
+  const editarEgresado = (id: string) => {
     router.push(`/egresados/formulario?id=${id}`);
   };
 
-  const filtrarEgresados = () => {
-    return egresados.filter(
+  const filtrarEgresados = () =>
+    egresados.filter(
       (e) =>
         e.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        e.puesto.toLowerCase().includes(busqueda.toLowerCase()) ||
-        e.descripcion.toLowerCase().includes(busqueda.toLowerCase())
+        e.puesto.toLowerCase().includes(busqueda.toLowerCase())
     );
-  };
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold text-center text-blue-800 mb-6">Lista de Egresados</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center text-blue-800">
+        Lista de Egresados
+      </h1>
 
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Buscar por nombre o puesto"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="flex-grow border p-2 rounded"
+        />
         <button
           onClick={() => router.push("/egresados/formulario")}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-1"
         >
-          <FaPlus /> Nuevo Egresado
+          <FaPlus /> Agregar
         </button>
-
-        <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1 bg-white">
-          <FaSearch className="text-gray-500 mr-2" />
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, puesto o descripción"
-            className="outline-none"
-          />
-        </div>
       </div>
 
-      {filtrarEgresados().length === 0 ? (
-        <p className="text-center text-gray-500">No hay egresados registrados o que coincidan con la búsqueda.</p>
+      {loading ? (
+        <p className="text-center">Cargando egresados...</p>
+      ) : filtrarEgresados().length === 0 ? (
+        <p className="text-center">No se encontraron egresados.</p>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtrarEgresados().map((e) => (
-            <li key={e.id} className="bg-white shadow-md rounded-lg p-4 border border-gray-200">
-              <h2 className="text-xl font-semibold text-blue-700">{e.nombre}</h2>
-              <p className="text-gray-700 font-medium">{e.puesto}</p>
-              <p className="text-gray-600 italic mt-1">{e.descripcion}</p>
-              {/* Redes sociales */}
-              {e.redesSociales && e.redesSociales.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {e.redesSociales.map((red) => (
-                    <a
-                      key={red.id}
-                      href={red.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline flex items-center gap-1"
-                    >
-                      <FaLink /> {red.nombre}
-                    </a>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2 mt-4">
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {filtrarEgresados().map(({ id, nombre, puesto, descripcion, redesSociales }) => (
+            <li
+              key={id}
+              className="border p-4 rounded shadow bg-white flex flex-col justify-between"
+            >
+              <div>
+                <h2 className="text-xl font-semibold text-blue-800">{nombre}</h2>
+                <p className="text-gray-600 italic">{puesto}</p>
+                <p className="mt-2 text-gray-700">{descripcion}</p>
+
+                {redesSociales && redesSociales.length > 0 && (
+                  <div className="mt-3 flex gap-3 flex-wrap">
+                    {redesSociales.map((red, i) =>
+                      red.url ? (
+                        <a
+                          key={i}
+                          href={red.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline flex items-center gap-1"
+                          title={red.nombre}
+                        >
+                          <FaLink /> {red.nombre}
+                        </a>
+                      ) : null
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-3 justify-end">
                 <button
-                  onClick={() => editarEgresado(e.id)}
-                  className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  onClick={() => editarEgresado(id)}
+                  className="text-blue-600 hover:underline flex items-center gap-1"
+                  disabled={eliminandoId === id}
                 >
                   <FaEdit /> Editar
                 </button>
                 <button
-                  onClick={() => eliminarEgresado(e.id)}
-                  className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  onClick={() => eliminarEgresado(id)}
+                  className="text-red-600 hover:underline flex items-center gap-1"
+                  disabled={eliminandoId === id}
                 >
-                  <FaTrash /> Eliminar
+                  {eliminandoId === id ? "Eliminando..." : <><FaTrash /> Eliminar</>}
                 </button>
               </div>
             </li>
