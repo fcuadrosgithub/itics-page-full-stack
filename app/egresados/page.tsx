@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaTiktok } from 'react-icons/fa';
+import { FiEdit, FiTrash } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { getDocs, collection, deleteDoc, doc } from 'firebase/firestore';
 import { db } from "@/src/lib/firebaseConfig";
@@ -17,7 +18,9 @@ type Egresado = {
   id: string;
   nombre: string;
   puesto: string;
-  foto?: string; // clave en localStorage
+  carrera?: string;
+  descripcionTrabajo?: string;
+  foto?: string;
   redes: RedSocial[];
 };
 
@@ -34,7 +37,8 @@ const iconosRedes: Record<RedesKeys, () => React.ReactNode> = {
 
 export default function Egresados() {
   const [egresados, setEgresados] = useState<Egresado[]>([]);
-  const [filtro, setFiltro] = useState("");
+  const [filtroTexto, setFiltroTexto] = useState("");
+  const [filtroCarrera, setFiltroCarrera] = useState("");
   const router = useRouter();
 
   const cargarEgresados = async () => {
@@ -46,6 +50,8 @@ export default function Egresados() {
         id: docu.id,
         nombre: data.nombre,
         puesto: data.puesto,
+        carrera: data.carrera,
+        descripcionTrabajo: data.descripcionTrabajo,
         redes: data.redes || [],
       });
     });
@@ -63,32 +69,54 @@ export default function Egresados() {
     cargarEgresados();
   };
 
-  // Filtrar por nombre o puesto, sin acentos y case insensitive
-  const listaFiltrada = egresados.filter(
-    (e) =>
-      quitarAcentos(e.nombre).includes(quitarAcentos(filtro)) ||
-      quitarAcentos(e.puesto).includes(quitarAcentos(filtro))
-  );
+  const carrerasUnicas = Array.from(
+    new Set(egresados.map((e) => e.carrera).filter(Boolean))
+  ) as string[];
+
+  const listaFiltrada = egresados.filter((e) => {
+    const textoMatch =
+      quitarAcentos(e.nombre).includes(quitarAcentos(filtroTexto)) ||
+      quitarAcentos(e.puesto).includes(quitarAcentos(filtroTexto));
+    const carreraMatch = filtroCarrera === "" || e.carrera === filtroCarrera;
+    return textoMatch && carreraMatch;
+  });
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-4">Egresados</h2>
-      <input
-        type="text"
-        placeholder="Buscar por nombre o puesto"
-        value={filtro}
-        onChange={(e) => setFiltro(e.target.value)}
-        className="border p-2 rounded w-full mb-4"
-      />
-      <button
-        onClick={() => router.push("/egresados/formulario")}
-        className="bg-green-600 text-white px-4 py-2 rounded mb-4"
-      >
-        + Agregar egresado
-      </button>
+    <div className="max-w-6xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
+      <h2 className="text-4xl font-bold mb-6 text-center text-blue-900">Egresados</h2>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Buscar por nombre o puesto"
+          value={filtroTexto}
+          onChange={(e) => setFiltroTexto(e.target.value)}
+          className="border border-gray-300 p-3 rounded-md flex-1 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+        />
+
+        <select
+          value={filtroCarrera}
+          onChange={(e) => setFiltroCarrera(e.target.value)}
+          className="border border-gray-300 p-3 rounded-md shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+        >
+          <option value="">Todas las carreras</option>
+          {carrerasUnicas.map((carrera) => (
+            <option key={carrera} value={carrera}>
+              {carrera}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => router.push("/egresados/formulario")}
+          className="bg-blue-700 text-white px-5 py-3 rounded-md hover:bg-blue-800 shadow-lg transition"
+        >
+          + Agregar egresado
+        </button>
+      </div>
 
       {listaFiltrada.length === 0 ? (
-        <p>No hay egresados que coincidan.</p>
+        <p className="text-center text-gray-500">No hay egresados que coincidan.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {listaFiltrada.map((egresado) => {
@@ -97,23 +125,33 @@ export default function Egresados() {
             return (
               <div
                 key={egresado.id}
-                className="border rounded p-4 flex flex-col items-center"
+                className="bg-white border border-blue-300 rounded-2xl shadow-2xl p-5 flex flex-col items-center relative hover:shadow-blue-400 transition"
               >
+                {/* Foto */}
                 {fotoLocal ? (
                   <img
                     src={fotoLocal}
                     alt={`Foto de ${egresado.nombre}`}
-                    className="w-32 h-32 rounded-full object-cover mb-2"
+                    className="w-28 h-28 rounded-full object-cover mb-3 border border-blue-400 shadow-md"
                   />
                 ) : (
-                  <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center mb-2">
+                  <div className="w-28 h-28 bg-gray-300 rounded-full flex items-center justify-center mb-3 border border-blue-400 shadow-md">
                     <span className="text-gray-500">Sin foto</span>
                   </div>
                 )}
-                <h3 className="text-xl font-semibold">{egresado.nombre}</h3>
-                <p className="text-gray-600 mb-2">{egresado.puesto}</p>
 
-                <div className="flex space-x-3 mb-4">
+                {/* Nombre y datos */}
+                <h3 className="text-lg font-bold text-center text-gray-900">{egresado.nombre}</h3>
+                <p className="text-sm text-gray-700 text-center">{egresado.puesto}</p>
+                {egresado.carrera && (
+                  <p className="text-sm text-blue-700 italic mt-1 text-center">{egresado.carrera}</p>
+                )}
+                {egresado.descripcionTrabajo && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">{egresado.descripcionTrabajo}</p>
+                )}
+
+                {/* Redes sociales */}
+                <div className="flex space-x-3 my-3">
                   {egresado.redes.map((red, i) => {
                     const Icono = iconosRedes[red.tipo];
                     return Icono ? (
@@ -122,7 +160,7 @@ export default function Egresados() {
                         href={red.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-2xl hover:opacity-70"
+                        className="text-2xl hover:scale-110 transition"
                         title={red.tipo}
                       >
                         {Icono()}
@@ -131,18 +169,21 @@ export default function Egresados() {
                   })}
                 </div>
 
-                <div className="flex space-x-2">
+                {/* Iconos de acciones */}
+                <div className="absolute top-3 right-3 flex space-x-2">
                   <button
                     onClick={() => router.push(`/egresados/formulario?id=${egresado.id}`)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded"
+                    title="Editar"
+                    className="text-yellow-600 hover:text-yellow-800 transition"
                   >
-                    Editar
+                    <FiEdit size={20} />
                   </button>
                   <button
                     onClick={() => eliminar(egresado.id)}
-                    className="bg-red-600 text-white px-3 py-1 rounded"
+                    title="Eliminar"
+                    className="text-red-600 hover:text-red-800 transition"
                   >
-                    Eliminar
+                    <FiTrash size={20} />
                   </button>
                 </div>
               </div>
