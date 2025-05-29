@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 
 interface SearchBarProps {
@@ -12,9 +11,15 @@ interface SearchBarProps {
 export default function SearchBar({ onSearch, placeholder = "Buscar..." }: SearchBarProps) {
   const [query, setQuery] = useState("")
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value
+    setQuery(newQuery)
+    onSearch(newQuery) // Llama a la función de búsqueda en tiempo real
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSearch(query)
+    onSearch(query) // Por si también quieres que funcione al enviar el formulario
   }
 
   return (
@@ -24,7 +29,7 @@ export default function SearchBar({ onSearch, placeholder = "Buscar..." }: Searc
           type="search"
           placeholder={placeholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleChange}
           className="w-full border border-gray-300 rounded-md py-2 px-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <svg

@@ -1,7 +1,7 @@
 // lib/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-
+import { getStorage } from "firebase/storage"
 // Configuración de Firebase (usa tus propios valores)
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -20,6 +20,7 @@ const db = getFirestore(app);
 
 // Exporta db como exportación nombrada
 export { db };
+export const storage = getStorage(app);
 
 // También puedes exportar otros servicios que necesites
 // export { auth, storage } from "firebase/auth";
